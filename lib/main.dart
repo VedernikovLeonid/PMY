@@ -568,7 +568,7 @@ class _SparePartCard extends StatelessWidget {
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
         ),
-        trailing: Text('${part.price.toStringAsFixed(0)} $'),
+        trailing: Text('${part.price.toStringAsFixed(0)} \$'),
       ),
     );
   }
