@@ -219,24 +219,11 @@ class _ServiceHomePageState extends State<ServiceHomePage> {
     _ordersFuture = _autoService.loadOrders();
   }
 
-  void _reloadOrders() {
-    setState(() {
-      _ordersFuture = _autoService.loadOrders();
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Автосервис «Мотор»'),
-        actions: [
-          IconButton(
-            onPressed: _reloadOrders,
-            tooltip: 'Обновить заказы',
-            icon: const Icon(Icons.refresh),
-          ),
-        ],
       ),
       body: FutureBuilder<List<RepairOrder>>(
         future: _ordersFuture,
@@ -256,8 +243,6 @@ class _ServiceHomePageState extends State<ServiceHomePage> {
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              _SummaryCard(orders: orders),
-              const SizedBox(height: 16),
               const Text(
                 'Текущие заказ-наряды',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
@@ -280,110 +265,168 @@ class _ServiceHomePageState extends State<ServiceHomePage> {
   }
 }
 
-class _SummaryCard extends StatelessWidget {
-  final List<RepairOrder> orders;
-
-  const _SummaryCard({required this.orders});
-
-  @override
-  Widget build(BuildContext context) {
-    final total = orders.fold<double>(
-      0,
-      // Anonymous function: fold собирает общую стоимость заказов.
-      (sum, order) => sum + order.totalPrice,
-    );
-    return Card(
-      color: Theme.of(context).colorScheme.primaryContainer,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text('Заказов в работе'),
-            Text(
-              '${orders.length}  •  ${total.rubles}',
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _OrderCard extends StatelessWidget {
+class _OrderCard extends StatefulWidget {
   final RepairOrder order;
 
   const _OrderCard({required this.order});
 
   @override
+  State<_OrderCard> createState() => _OrderCardState();
+}
+
+class _OrderCardState extends State<_OrderCard> {
+  bool _isLiked = false;
+
+  void _toggleLike() {
+    setState(() {
+      _isLiked = !_isLiked;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          _isLiked
+              ? 'Карточка добавлена в избранное'
+              : 'Лайк с карточки убран',
+        ),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  void _showDetails() {
+    final order = widget.order;
+    showDialog<void>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Заказ №${order.number}'),
+          content: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Клиент: ${order.clientName}'),
+                const SizedBox(height: 8),
+                Text('Автомобиль: ${order.car.description}'),
+                const SizedBox(height: 8),
+                Text('Статус: ${order.statusTitle}'),
+                const SizedBox(height: 8),
+                for (final service in order.services)
+                  Text('• ${service.name} — ${service.price.rubles}'),
+                const SizedBox(height: 8),
+                Text('Итого: ${order.totalPrice.rubles}'),
+                Text('Время работ: ${order.totalHours} ч.'),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Закрыть'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final order = widget.order;
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.network(
-                    order.car.imageUrl,
-                    width: 112,
-                    height: 96,
-                    fit: BoxFit.cover,
-                    // Локальная заглушка сохраняет внешний вид карточки без сети.
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        width: 112,
-                        height: 96,
-                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                        child: const Icon(Icons.directions_car, size: 42),
-                      );
-                    },
+      child: InkWell(
+        onTap: _showDetails,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.network(
+                      order.car.imageUrl,
+                      width: 112,
+                      height: 96,
+                      fit: BoxFit.cover,
+                      // Локальная заглушка сохраняет внешний вид карточки без сети.
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          width: 112,
+                          height: 96,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .surfaceContainerHighest,
+                          child: const Icon(Icons.directions_car, size: 42),
+                        );
+                      },
+                    ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                'Заказ №${order.number}',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            IconButton(
+                              onPressed: _toggleLike,
+                              tooltip: _isLiked
+                                  ? 'Убрать лайк'
+                                  : 'Поставить лайк',
+                              icon: Icon(
+                                _isLiked
+                                    ? Icons.favorite
+                                    : Icons.favorite_border,
+                                color: _isLiked ? Colors.red : null,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Chip(label: Text(order.statusTitle)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(order.clientName),
+              Text(order.car.description),
+              const Divider(),
+              // Цикл for создаёт строки с перечнем работ.
+              for (final service in order.services)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        'Заказ №${order.number}',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      Expanded(
+                        child: Text('${service.type.title}: ${service.name}'),
                       ),
-                      const SizedBox(height: 6),
-                      Chip(label: Text(order.statusTitle)),
+                      Text(service.price.rubles),
                     ],
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(order.clientName),
-            Text(order.car.description),
-            const Divider(),
-            // Цикл for создаёт строки с перечнем работ.
-            for (final service in order.services)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(child: Text('${service.type.title}: ${service.name}')),
-                    Text(service.price.rubles),
-                  ],
-                ),
+              const SizedBox(height: 8),
+              Text(
+                'Итого: ${order.totalPrice.rubles} • ${order.totalHours} ч.',
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
-            const SizedBox(height: 8),
-            Text(
-              'Итого: ${order.totalPrice.rubles} • ${order.totalHours} ч.',
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
