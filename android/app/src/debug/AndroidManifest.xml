@@ -4,4 +4,6 @@
          to allow setting breakpoints, to provide hot reload, etc.
     -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Local Spring backend uses HTTP during development; release builds remain unchanged. -->
+    <application android:usesCleartextTraffic="true" />
 </manifest>

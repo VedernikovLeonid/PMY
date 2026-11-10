@@ -30,7 +30,15 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  flutter_bloc: ^9.1.1
+  intl: ^0.20.3
   http: ^1.2.2
+  json_annotation: ^4.12.0
+  path: ^1.9.1
+  rxdart: ^0.28.0
+  sqflite: ^2.4.6
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -39,6 +47,11 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  flutter_launcher_icons: ^0.14.4
+  sqflite_common_ffi: ^2.4.6
+  bloc_test: ^10.0.0
+  build_runner: ^2.4.13
+  json_serializable: ^6.9.0
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
@@ -52,6 +65,7 @@ dev_dependencies:
 
 # The following section is specific to Flutter packages.
 flutter:
+  generate: true
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
